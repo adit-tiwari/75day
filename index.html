@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="75 Day">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>75 Day</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1d1d1f;--mute:#8a8a8e;--line:#e5e5e2;--ok:#1f9d55;--okbg:#e6f6ec;--miss:#f6dcdc;--missink:#b23b3b;--cell:#ececea;--accent:#2b59c3}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f5f5f7;--mute:#8e8e93;--line:#2c2c2e;--ok:#30d158;--okbg:#0f2e1a;--miss:#3a1c1c;--missink:#ff6b6b;--cell:#2c2c2e;--accent:#0a84ff}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.top h1{font-size:30px;margin:0;letter-spacing:-.5px}
+.top .d{color:var(--mute);font-size:14px}
+.ring{position:relative;width:64px;height:64px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:11px;color:var(--mute)}
+.card{background:var(--card);border-radius:18px;padding:14px;margin-bottom:14px}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dh h2{font-size:17px;margin:0}
+.nav{display:flex;gap:6px}
+.nav button{border:0;background:var(--cell);color:var(--ink);border-radius:10px;height:34px;min-width:34px;padding:0 10px;font-size:15px}
+.nav button:disabled{opacity:.3}
+.rule{display:flex;align-items:center;gap:14px;padding:0 14px;height:60px;border-radius:14px;background:var(--bg);margin-bottom:8px;font-size:17px;border:2px solid transparent;transition:background .15s,border-color .15s,transform .08s}
+.rule:active{transform:scale(.98)}
+.rule .e{font-size:24px;width:28px;text-align:center}
+.rule .c{margin-left:auto;width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:15px;font-weight:700}
+.rule.on{background:var(--okbg);border-color:var(--ok)}
+.rule.on .c{background:var(--ok);border-color:var(--ok)}
+.msg{text-align:center;font-weight:600;color:var(--ok);font-size:15px;padding-top:4px;min-height:22px}
+.legend{font-size:12px;color:var(--mute);margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+.cell{aspect-ratio:1;border-radius:8px;background:var(--cell);font-size:11px;display:grid;place-items:center;color:var(--mute)}
+.cell.f{opacity:.4}
+.cell.full{background:var(--ok);color:#fff}
+.cell.miss{background:var(--miss);color:var(--missink)}
+.cell.today{font-weight:700;color:var(--ink)}
+.cell.full.today{color:#fff}
+.cell.sel{outline:2px solid var(--accent);outline-offset:1px}
+.foot{display:flex;gap:8px;justify-content:center}
+.foot button{border:0;background:none;color:var(--mute);font-size:13px;padding:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1 id="day">Day 1</h1><div class="d" id="date"></div></div>
+  <div class="ring"><svg width="64" height="64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--line)" stroke-width="6"/><circle id="arc" cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><b id="left">74</b></div>
+</div>
+<div class="stats">
+  <div class="stat"><b id="streak">0</b><span>🔥 Streak</span></div>
+  <div class="stat"><b id="perfect">0</b><span>Perfect days</span></div>
+  <div class="stat"><b id="pct">0%</b><span>Habits hit</span></div>
+</div>
+<div class="card">
+  <div class="dh"><h2 id="selT">Today</h2><div class="nav"><button id="prev">‹</button><button id="tod">Today</button><button id="next">›</button></div></div>
+  <div id="rules"></div>
+  <div class="msg" id="msg"></div>
+</div>
+<div class="card">
+  <div class="legend">Green = all six · Red = missed · Tap a past day to edit</div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="foot"><button id="bk">Back up data</button><button id="rs">Restore</button></div>
+<script>
+const RULES=[["🏋️","1-hour workout"],["🥗","Clean eating"],["💧","3L of water"],["📖","Read 10 pages"],["🚫","Zero alcohol"],["💻","1+ code commit"]];
+const START=new Date(2026,9,20),TOTAL=75,KEY="adit-75day-v1",$=id=>document.getElementById(id);
+let data={};try{data=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}};
+function curDay(){const n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate());return Math.min(Math.max(Math.round((t-START)/864e5)+1,1),TOTAL)}
+let T=curDay(),sel=T;
+const dateOf=d=>{const x=new Date(START);x.setDate(x.getDate()+d-1);return x.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})};
+const get=d=>data[d]||[0,0,0,0,0,0],full=d=>get(d).every(Boolean);
+function render(){
+  const v=get(sel),n=v.filter(Boolean).length;
+  $("day").textContent=`Day ${T}`;$("date").textContent=`of 75 · ${dateOf(T)}`;
+  $("left").textContent=TOTAL-T;$("arc").style.strokeDashoffset=169.6*(1-T/TOTAL);
+  $("selT").textContent=sel===T?"Today":`Day ${sel} · ${dateOf(sel).split(",")[0]}`;
+  const r=$("rules");r.innerHTML="";
+  RULES.forEach(([e,l],i)=>{const el=document.createElement("div");el.className="rule"+(v[i]?" on":"");
+    el.innerHTML=`<span class="e">${e}</span>${l}<span class="c">${v[i]?"✓":""}</span>`;
+    el.onclick=()=>{const a=get(sel).slice();a[i]=a[i]?0:1;data[sel]=a;save();render()};r.appendChild(el)});
+  $("msg").textContent=n===6?"All six done. Day locked in 💪":`${n} of 6 done`;
+  $("prev").disabled=sel<=1;$("next").disabled=sel>=T;
+  const g=$("grid");g.innerHTML="";
+  for(let d=1;d<=TOTAL;d++){const c=document.createElement("div");c.textContent=d;
+    let k="cell";if(d>T)k+=" f";else if(full(d))k+=" full";else if(d<T)k+=" miss";
+    if(d===T)k+=" today";if(d===sel)k+=" sel";c.className=k;
+    if(d<=T)c.onclick=()=>{sel=d;render();scrollTo({top:0,behavior:"smooth"})};g.appendChild(c)}
+  let s=0;for(let d=T;d>=1;d--){if(full(d))s++;else if(d===T)continue;else break}
+  let p=0,h=0;for(let d=1;d<=T;d++){if(full(d))p++;h+=get(d).filter(Boolean).length}
+  $("streak").textContent=s;$("perfect").textContent=p;$("pct").textContent=Math.round(h/(T*6)*100)+"%";
+}
+$("prev").onclick=()=>{if(sel>1){sel--;render()}};
+$("next").onclick=()=>{if(sel<T){sel++;render()}};
+$("tod").onclick=()=>{sel=T;render()};
+$("bk").onclick=async()=>{const s=JSON.stringify(data);try{await navigator.clipboard.writeText(s);alert("Backup copied. Paste it into a note.")}catch(e){prompt("Copy this backup:",s)}};
+$("rs").onclick=()=>{const s=prompt("Paste your backup:");if(!s)return;try{data=JSON.parse(s);save();render();alert("Restored.")}catch(e){alert("That backup didn't look right.")}};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){const t=curDay();if(t!==T){T=t;sel=t;render()}}});
+render();
+</script>
+</body>
+</html>
